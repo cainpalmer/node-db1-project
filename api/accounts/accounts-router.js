@@ -1,8 +1,8 @@
 
 // Router Variables
 const router = require('express').Router()
-const MW = require('./accounts-middleware')
 const Account = require('./accounts-model')
+const {checkAccountPayload, checkAccountNameUnique, checkAccountId} = require('./accounts-middleware')
 
 // Router Actions
 router.get('/', async (req, res, next) => {
@@ -14,20 +14,38 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-router.get('/:id', MW.checkAccountId, (req, res, next) => {
-  res.json(req.account)
+router.get('/:id', checkAccountId, (req, res, next) => {
+  const {id} = req.params
+  Account.getById(id)
+  .then(account => {
+    res.status(200).json(account)
+  })
+  .catch(err => {
+    res.status(400).json({message: err.message})
+  })
 })
 
-router.post('/', (req, res, next) => {
-  //
+router.post('/', checkAccountPayload, checkAccountNameUnique, async (req, res, next) => {
+  try {
+    const newAccount = await Account.create(req.body)
+    res.status(201).json(newAccount)
+  } catch(err) {
+    next(err)
+  }
 })
 
 router.put('/:id', (req, res, next) => {
   // 
 });
 
-router.delete('/:id', (req, res, next) => {
-  //
+router.delete('/:id', checkAccountId, async (req, res, next) => {
+  try {
+    await Account.deleteById(req.params.id)
+    res.json(req.account)
+    res.json('deleted account')
+  } catch(err) {
+    next(err)
+  }
 })
 
 router.use((err, req, res, next) => { // eslint-disable-line

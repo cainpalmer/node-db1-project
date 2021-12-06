@@ -2,43 +2,37 @@
 // Middleware Variables
 const Account = require('./accounts-model')
 const db = require('../../data/db-config')
+const { OPEN_READWRITE } = require('sqlite3')
 
 // Middlewares
 exports.checkAccountPayload = (req, res, next) => {
-  const error = {status: 400}
-  const {name, budget} = req.body
-  if (name === undefined || budget === undefined) {
-    error.message = 'name and budget are required'
-  } else if (typeof name !== 'string') {
-    error.message = 'name of account must be a string'
-  } else if (name.trim().length < 3 || name.trim().length > 100) {
-    error.message = 'name of account must be between 3 and 100'
-  } else if (typeof budget !== 'number' || !isNaN(budget)) {
-    error.message = 'budget of account must be a number'
-  } else if (budget < 0 || budget > 1000000) {
-    error.message = 'budget of account us too large or small'
-  }
-  if (error.message) {
-    next(error)
+  if (!req.body.name || !req.body.budget) {
+    res.status(400).json({message: 'name and budget are required'})
+  } else if (typeof req.body.name !== 'string') {
+    res.status(400).json({message: 'name of account must be a string'})
+  } else if (req.body.name.length < 3 || req.body.name.length > 100) {
+    res.status(400).json({message: 'name of account must be between 3 and 100'})
+  } else if (typeof req.body.buget != 'number') {
+    res.status(400).json({message: 'budget of account must be a number'})
+  } else if (req.body.budget < 0 || req.budget > 1000000) {
+    res.status(400).json({message: 'budget of account is too large or too small'})
   } else {
     next()
   }
 }
 
-exports.checkAccountNameUnique = async (req, res, next) => {
-  try {
-    const exists = await db('accounts')
-    .where('name', req.body.name.trim())
-    .first()
-    if (exists) {
-      next({
-        status: 400,
-        message: 'that name is taken'
-      })
+exports.checkAccountNameUnique = (req, res, next) => {
+  db('accounts').where({name: req.body.name}).first()
+  .then(account => {
+    if (!account) {
+      next()
+    } else {
+      res.status(400).json('that name is taken')
     }
-  } catch(err) {
-    next(err)
-  }
+  })
+  .catch(err => {
+    res.json({message: err.message})
+  })
 }
 
 exports.checkAccountId = (req, res, next) => {

@@ -27,22 +27,20 @@ router.get('/:id', checkAccountId, (req, res, next) => {
 
 router.post('/', checkAccountPayload, checkAccountNameUnique, async (req, res, next) => {
   try {
-    const newAccount = await Account.create(req.body)
-    res.status(201).json(newAccount)
+    const data = await Account.create(req.body)
+    res.status(201).json(data)
   } catch (err) {
     next(err)
   }
 })
 
-router.put('/:id', checkAccountId, checkAccountPayload, (req, res, next) => {
-  const {id} = req.params
-  Account.updateById(id, req.body)
-  .then(updatedAccount => {
-    res.status(200).json(updatedAccount)
-  })
-  .catch(err => {
-    res.status(400).json({message: err.message})
-  })
+router.put('/:id', checkAccountId, checkAccountPayload, async (req, res, next) => {
+  try {
+    const data = await Account.updateById(req.params.id, req.body)
+    res.json(data)
+  } catch (err) {
+    next(err)
+  }
 });
 
 router.delete('/:id', checkAccountId, async (req, res, next) => {
